@@ -1,16 +1,16 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
 	"log"
-	"bufio"
 	"os"
-	"encoding/json"
 )
 
 type Namedscanner struct {
-	name string
-	scanner *bufio.Scanner
+	name       string
+	scanner    *bufio.Scanner
 	moretoread bool
 }
 
@@ -20,11 +20,11 @@ type Namedscanner struct {
 func main() {
 	flag.Parse()
 
-	data := make([]map[string]string,0)
-	scanners := make([]*Namedscanner,0)
+	data := make([]map[string]string, 0)
+	scanners := make([]*Namedscanner, 0)
 
 	args := flag.Args()
-	for i := 0; i < len(args); i+=2 {
+	for i := 0; i < len(args); i += 2 {
 		log.Println("opening", args[i], args[i+1])
 		fd, err := os.Open(args[i+1])
 		if err != nil {
@@ -32,8 +32,8 @@ func main() {
 		}
 
 		ns := &Namedscanner{
-			name: args[i],
-			scanner: bufio.NewScanner(fd),
+			name:       args[i],
+			scanner:    bufio.NewScanner(fd),
 			moretoread: true,
 		}
 		scanners = append(scanners, ns)
@@ -43,7 +43,6 @@ func main() {
 	if len(scanners) <= 0 {
 		log.Fatalln("no files to read. exiting")
 	}
-
 
 	openfile := true
 	for openfile {
@@ -56,9 +55,9 @@ func main() {
 
 			openfile = true
 			if s := ns.scanner.Scan(); s {
-				obj[ns.name] = ns.scanner.Text()		
+				obj[ns.name] = ns.scanner.Text()
 				data = append(data, obj)
-			} else {  // End or failure case
+			} else { // End or failure case
 				ns.moretoread = false
 				if err := ns.scanner.Err(); err != nil {
 					log.Println("tool an error", err)
@@ -70,11 +69,9 @@ func main() {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	encoder.Encode(data)
-	
 
 	// TODO(rjk): Emit the json object here.
 	// Can the JSON converter read from a stream?
 	// Mutate appropriately.
-
 
 }
