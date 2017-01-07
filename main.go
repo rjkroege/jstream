@@ -1,18 +1,80 @@
 package main
 
 import (
-	"fmt"
+	"flag"
+	"log"
 	"bufio"
 	"os"
+	"encoding/json"
 )
 
+type Namedscanner struct {
+	name string
+	scanner *bufio.Scanner
+	moretoread bool
+}
+
 // Reads lines from standard in
+// Args go like this: JSON key file
+// TODO(rjk): Improve this.
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text()) // Println will add back the final '\n'
+	flag.Parse()
+
+	data := make([]map[string]string,0)
+	scanners := make([]*Namedscanner,0)
+
+	args := flag.Args()
+	for i := 0; i < len(args); i+=2 {
+		log.Println("opening", args[i], args[i+1])
+		fd, err := os.Open(args[i+1])
+		if err != nil {
+			log.Fatalln("couldn't open", args[i+1], "for reading")
+		}
+
+		ns := &Namedscanner{
+			name: args[i],
+			scanner: bufio.NewScanner(fd),
+			moretoread: true,
+		}
+		scanners = append(scanners, ns)
 	}
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+
+	log.Println(scanners)
+	if len(scanners) <= 0 {
+		log.Fatalln("no files to read. exiting")
 	}
+
+
+	openfile := true
+	for openfile {
+		openfile = false
+		obj := make(map[string]string)
+		for _, ns := range scanners {
+			if !ns.moretoread {
+				continue
+			}
+
+			openfile = true
+			if s := ns.scanner.Scan(); s {
+				obj[ns.name] = ns.scanner.Text()		
+				data = append(data, obj)
+			} else {  // End or failure case
+				ns.moretoread = false
+				if err := ns.scanner.Err(); err != nil {
+					log.Println("tool an error", err)
+				}
+			}
+		}
+	}
+
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	encoder.Encode(data)
+	
+
+	// TODO(rjk): Emit the json object here.
+	// Can the JSON converter read from a stream?
+	// Mutate appropriately.
+
+
 }
