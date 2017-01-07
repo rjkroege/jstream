@@ -16,7 +16,8 @@ type Namedscanner struct {
 
 // Reads lines from standard in
 // Args go like this: JSON key file
-// TODO(rjk): Improve this.
+// TODO(rjk): Improve this. I could do something smarter about the
+// labeling of the tags.
 func main() {
 	flag.Parse()
 
@@ -25,7 +26,6 @@ func main() {
 
 	args := flag.Args()
 	for i := 0; i < len(args); i += 2 {
-		log.Println("opening", args[i], args[i+1])
 		fd, err := os.Open(args[i+1])
 		if err != nil {
 			log.Fatalln("couldn't open", args[i+1], "for reading")
@@ -39,7 +39,6 @@ func main() {
 		scanners = append(scanners, ns)
 	}
 
-	log.Println(scanners)
 	if len(scanners) <= 0 {
 		log.Fatalln("no files to read. exiting")
 	}
@@ -69,9 +68,4 @@ func main() {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	encoder.Encode(data)
-
-	// TODO(rjk): Emit the json object here.
-	// Can the JSON converter read from a stream?
-	// Mutate appropriately.
-
 }
