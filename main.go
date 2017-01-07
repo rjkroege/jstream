@@ -46,6 +46,7 @@ func main() {
 	openfile := true
 	for openfile {
 		openfile = false
+		somethingtoappend := false
 		obj := make(map[string]string)
 		for _, ns := range scanners {
 			if !ns.moretoread {
@@ -55,13 +56,16 @@ func main() {
 			openfile = true
 			if s := ns.scanner.Scan(); s {
 				obj[ns.name] = ns.scanner.Text()
-				data = append(data, obj)
+				somethingtoappend = true
 			} else { // End or failure case
 				ns.moretoread = false
 				if err := ns.scanner.Err(); err != nil {
 					log.Println("tool an error", err)
 				}
 			}
+		}
+		if somethingtoappend {
+			data = append(data, obj)
 		}
 	}
 
